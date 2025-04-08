@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+    tools{
+        maven 'Maven 3.8.7'
+    }
+    stages {
+        stage('SCM') {
+            steps {
+               git branch: 'main', url: 'https://gitlab.com/supriyadivvela9848/training-program.git'
+            }
+        }
+        stage('Build and Test') {
+            steps {
+                bat "cd TrainingProgram && mvn clean package"
+            }
+        }
+        stage('jacoco code coverage'){
+            steps{
+                jacoco()
+            }
+        }
+         stage('SonarQube analysis') {
+            steps {
+                bat "mvn sonar:sonar -Dsonar.projectKey=ok -Dsonar.projectName='ok' -Dsonar.host.url=http://localhost:9000 -Dsonar.token=sqp_acf30e2bf29248516d60c86939a649b19e30e28e"
+            }
+        }
+        stage('Push image to Hub'){
+            steps{
+                withCredentials([string(credentialsId: 'ok', variable: 'ok')]) {
+                    bat "docker login -u supriyadivvela -p ${ok}"
+                    bat "docker push com.epam/training-program.0.0.1-SNAPSHOT"
+                }
+            }
+        }
+    }
+}
